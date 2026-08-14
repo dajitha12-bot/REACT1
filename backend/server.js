@@ -24,6 +24,11 @@ const FRONTEND_PATH = path.join(
   "dist"
 );
 
+const INDEX_FILE = path.join(
+  FRONTEND_PATH,
+  "index.html"
+);
+
 // ============================================================
 // MIDDLEWARE
 // ============================================================
@@ -83,15 +88,13 @@ function writeStudents(students) {
       ),
       "utf-8"
     );
-
-    return true;
   } catch (error) {
     console.error(
       "Error writing students.json:",
       error
     );
 
-    return false;
+    throw error;
   }
 }
 
@@ -120,10 +123,7 @@ app.get(
 
       res.json(students);
     } catch (error) {
-      console.error(
-        "Get students error:",
-        error
-      );
+      console.error(error);
 
       res.status(500).json({
         message:
@@ -162,10 +162,7 @@ app.get(
 
       res.json(student);
     } catch (error) {
-      console.error(
-        "Get student error:",
-        error
-      );
+      console.error(error);
 
       res.status(500).json({
         message:
@@ -195,7 +192,6 @@ app.post(
         email
       } = req.body;
 
-      // Validate fields
       if (
         !rollNo ||
         !name ||
@@ -210,16 +206,13 @@ app.post(
         });
       }
 
-      // Check duplicate roll number
       const duplicate =
         students.find(
           (student) =>
-            String(
-              student.rollNo
-            ).toLowerCase() ===
-            String(
-              rollNo
-            ).toLowerCase()
+            String(student.rollNo)
+              .toLowerCase() ===
+            String(rollNo)
+              .toLowerCase()
         );
 
       if (duplicate) {
@@ -229,19 +222,17 @@ app.post(
         });
       }
 
-      // Create new ID
-      const newId =
-        students.length > 0
-          ? Math.max(
-              ...students.map(
-                (student) =>
-                  Number(student.id) || 0
-              )
-            ) + 1
-          : 1;
-
       const newStudent = {
-        id: newId,
+        id:
+          students.length > 0
+            ? Math.max(
+                ...students.map(
+                  (student) =>
+                    Number(student.id)
+                )
+              ) + 1
+            : 1,
+
         rollNo,
         name,
         department,
@@ -250,21 +241,9 @@ app.post(
         email
       };
 
-      students.push(
-        newStudent
-      );
+      students.push(newStudent);
 
-      const saved =
-        writeStudents(
-          students
-        );
-
-      if (!saved) {
-        return res.status(500).json({
-          message:
-            "Failed to save student"
-        });
-      }
+      writeStudents(students);
 
       res.status(201).json(
         newStudent
@@ -319,7 +298,6 @@ app.put(
         email
       } = req.body;
 
-      // Validate fields
       if (
         !rollNo ||
         !name ||
@@ -334,17 +312,14 @@ app.put(
         });
       }
 
-      // Check duplicate roll number
       const duplicate =
         students.find(
           (student) =>
             Number(student.id) !== id &&
-            String(
-              student.rollNo
-            ).toLowerCase() ===
-            String(
-              rollNo
-            ).toLowerCase()
+            String(student.rollNo)
+              .toLowerCase() ===
+            String(rollNo)
+              .toLowerCase()
         );
 
       if (duplicate) {
@@ -364,17 +339,7 @@ app.put(
         email
       };
 
-      const saved =
-        writeStudents(
-          students
-        );
-
-      if (!saved) {
-        return res.status(500).json({
-          message:
-            "Failed to save student"
-        });
-      }
+      writeStudents(students);
 
       res.json(
         students[index]
@@ -423,17 +388,7 @@ app.delete(
         });
       }
 
-      const saved =
-        writeStudents(
-          filtered
-        );
-
-      if (!saved) {
-        return res.status(500).json({
-          message:
-            "Failed to save students"
-        });
-      }
+      writeStudents(filtered);
 
       res.json({
         message:
@@ -457,85 +412,57 @@ app.delete(
 // SERVE REACT FRONTEND
 // ============================================================
 
-if (
-  fs.existsSync(
-    FRONTEND_PATH
-  )
-) {
-  console.log(
-    "React dist folder found:",
-    FRONTEND_PATH
-  );
+console.log(
+  "Frontend path:",
+  FRONTEND_PATH
+);
 
+console.log(
+  "Frontend exists:",
+  fs.existsSync(FRONTEND_PATH)
+);
+
+console.log(
+  "Index file exists:",
+  fs.existsSync(INDEX_FILE)
+);
+
+if (fs.existsSync(FRONTEND_PATH)) {
   // Serve React static files
   app.use(
-    express.static(
-      FRONTEND_PATH
-    )
+    express.static(FRONTEND_PATH)
   );
 
   // React SPA fallback
-  // DO NOT use app.get("*")
-  // because newer Express versions reject "*".
-  app.use(
-    (req, res, next) => {
-      // Only handle browser GET requests
-      if (req.method !== "GET") {
-        return next();
-      }
+  app.use((req, res, next) => {
+    // Never send React HTML for API routes
+    if (
+      req.path.startsWith("/api")
+    ) {
+      return next();
+    }
 
-      // Don't send React HTML for API routes
-      if (
-        req.path.startsWith(
-          "/api"
-        )
-      ) {
-        return res.status(404).json({
-          message:
-            "API route not found"
-        });
-      }
-
-      res.sendFile(
-        path.join(
-          FRONTEND_PATH,
-          "index.html"
-        )
+    // Only send index.html if it exists
+    if (fs.existsSync(INDEX_FILE)) {
+      return res.sendFile(
+        INDEX_FILE
       );
     }
-  );
-} else {
-  console.log(
-    "WARNING: React dist folder not found:"
-  );
 
-  console.log(
-    FRONTEND_PATH
-  );
-
-  // Helpful response when React hasn't been built
-  app.get(
-    "/",
-    (req, res) => {
-      res.status(500).send(
-        "React dist folder not found. Run npm run build first."
-      );
-    }
-  );
+    next();
+  });
 }
 
 // ============================================================
 // 404 HANDLER
 // ============================================================
 
-app.use(
-  (req, res) => {
-    res.status(404).json({
-      message:
-        "Route not found"
-    });
-  }
-);
+app.use((req, res) => {
+  res.status(404).json({
+    message: "Route not found",
+    path: req.path
+  });
+});
 
 // ============================================================
 // ERROR HANDLER
@@ -566,6 +493,7 @@ app.use(
 
 app.listen(
   PORT,
+  "0.0.0.0",
   () => {
     console.log(
       `Server is running on port ${PORT}`

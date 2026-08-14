@@ -1,0 +1,29 @@
+[
+  {
+    "id": 1,
+    "rollNo": "IT101",
+    "name": "Arun Kumar",
+    "department": "Information Technology",
+    "year": "2nd Year",
+    "course": "MERN Stack",
+    "email": "arun@gmail.com"
+  },
+  {
+    "id": 2,
+    "rollNo": "IT102",
+    "name": "Priya",
+    "department": "Information Technology",
+    "year": "2nd Year",
+    "course": "Frontend Development",
+    "email": "priya@gmail.com"
+  },
+  {
+    "id": 3,
+    "rollNo": "IT12",
+    "name": "D R AJITHA IT-2024",
+    "department": "it",
+    "year": "4th Year",
+    "course": "MERN Stack",
+    "email": "24205047@nec.edu.in"
+  }
+]

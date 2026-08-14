@@ -1,0 +1,8 @@
+{
+  "name": "student-management-app",
+  "version": "1.0.0",
+  "scripts": {
+    "build": "npm install --prefix my-react-app && npm run build --prefix my-react-app",
+    "start": "node backend/server.js"
+  }
+}

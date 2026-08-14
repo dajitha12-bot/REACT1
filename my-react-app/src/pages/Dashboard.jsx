@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 import { useEffect, useState } from "react";
 
 const API_URL =
-  "http://localhost:5000/api/students";
+  "/api/students";
 
 function Dashboard() {
 

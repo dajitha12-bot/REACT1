@@ -5,7 +5,7 @@ import StudentList from "../components/StudentList";
 
 
 const API_URL =
-  "http://localhost:5000/api/students";
+  "/api/students";
 
 
 function Students() {
